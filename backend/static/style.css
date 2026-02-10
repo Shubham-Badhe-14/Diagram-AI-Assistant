@@ -1,0 +1,15 @@
+
+/* Custom styles to supplement Tailwind */
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.mermaid svg {
+    max-width: 100%;
+    height: auto;
+}
+
+#drop-zone.dragover {
+    background-color: #eef2ff; /* indigo-50 */
+    border-color: #6366f1; /* indigo-500 */
+}

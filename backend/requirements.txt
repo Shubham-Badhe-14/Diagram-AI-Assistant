@@ -1,0 +1,17 @@
+
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic
+pydantic-settings
+loguru
+opencv-python-headless
+easyocr
+numpy
+httpx
+jinja2
+
+python-dotenv
+openai
+google-genai
+pillow
