@@ -25,8 +25,8 @@
 
 1.  **Clone the repository**
     ```bash
-    git clone https://github.com/Start-0-Zero/Digram-To-Flowchart.git
-    cd Digram-To-Flowchart
+    git clone https://github.com/Shubham-Badhe-14/Diagram-AI-Assistant.git
+    cd Diagram-AI-Assistant
     ```
 
 2.  **Create a virtual environment**
