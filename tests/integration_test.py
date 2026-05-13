@@ -55,7 +55,7 @@ def test_pipeline():
         
     # 3. Poll Status
     print("Polling status...")
-    for _ in range(10): # Timeout after 10s
+    for _ in range(120):  # Up to ~120s (EasyOCR cold start can be slow)
         response = requests.get(f"{API_URL}/status/{job_id}")
         status_data = response.json()
         status = status_data["status"]

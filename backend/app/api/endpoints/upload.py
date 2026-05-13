@@ -12,7 +12,8 @@ async def upload_image(file: UploadFile = File(...)):
     Upload an image to start a new processing job.
     """
     # Validation
-    if not file.content_type.startswith("image/"):
+    content_type = file.content_type or ""
+    if not content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
     
     try:

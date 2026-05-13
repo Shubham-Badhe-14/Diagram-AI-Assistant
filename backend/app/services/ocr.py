@@ -1,9 +1,20 @@
 
 import easyocr
 import numpy as np
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from loguru import logger
 from backend.app.core.errors import OCRFailure
+
+_ocr_service_singleton: Optional["OCRService"] = None
+
+
+def get_ocr_service() -> "OCRService":
+    """Process-wide lazy singleton so EasyOCR models load once per worker."""
+    global _ocr_service_singleton
+    if _ocr_service_singleton is None:
+        _ocr_service_singleton = OCRService()
+    return _ocr_service_singleton
+
 
 class OCRService:
     def __init__(self, languages: List[str] = ['en']):

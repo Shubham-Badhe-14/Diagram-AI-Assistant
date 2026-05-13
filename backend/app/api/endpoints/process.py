@@ -5,8 +5,7 @@ from fastapi import APIRouter, HTTPException, BackgroundTasks
 from backend.app.core.config import settings
 from backend.app.services.storage import StorageService
 from backend.app.services.preprocessing import ImagePreprocessor
-from backend.app.services.ocr import OCRService
-from backend.app.services.vision.stub import StubVisionProvider
+from backend.app.services.ocr import get_ocr_service
 from backend.app.services.vision.prompts import FLOWCHART_PROMPT
 from backend.app.services.inference import InferenceEngine
 from backend.app.services.mermaid.generator import MermaidGenerator
@@ -38,11 +37,14 @@ async def run_pipeline(job_id: str):
         image = ImagePreprocessor.load_image(input_path)
         processed_image = ImagePreprocessor.preprocess(image, debug_output_dir=job_dir)
         
-        # 2. OCR (Optional dependency, might skip if vision is strong)
-        logger.info("Step 2: OCR Extraction")
-        ocr_service = OCRService() # Should be singleton in prod
-        ocr_results = ocr_service.extract_text(processed_image)
-        logger.info(f"OCR found {len(ocr_results)} text items")
+        # 2. OCR (optional; singleton per worker when enabled)
+        if settings.ENABLE_OCR:
+            logger.info("Step 2: OCR Extraction")
+            ocr_results = get_ocr_service().extract_text(processed_image)
+            logger.info(f"OCR found {len(ocr_results)} text items")
+        else:
+            logger.info("Step 2: OCR skipped (ENABLE_OCR=false)")
+            ocr_results = []
 
         # 3. Vision Analysis
         logger.info(f"Step 3: Vision Analysis (Provider: {settings.VISION_PROVIDER})")
@@ -100,17 +102,42 @@ async def run_pipeline(job_id: str):
         logger.error(f"Job {job_id} failed: {e}")
         JOB_STATUS[job_id] = f"failed: {str(e)}"
 
+def _job_is_active(status: str) -> bool:
+    if status in {
+        "queued",
+        "processing",
+        "completed",
+        "completed_with_warnings",
+        "processing_retrying",
+    }:
+        return True
+    if status.startswith("waiting_rate_limit"):
+        return True
+    return False
+
+
 @router.post("/process/{job_id}")
 async def process_diagram(job_id: str, background_tasks: BackgroundTasks):
     """
     Trigger the processing pipeline for a given job ID.
     """
-    if job_id in JOB_STATUS and JOB_STATUS[job_id] in ["processing", "completed"]:
+    if job_id in JOB_STATUS and _job_is_active(JOB_STATUS[job_id]):
         return {"message": "Job already exists", "job_id": job_id, "status": JOB_STATUS[job_id]}
 
     background_tasks.add_task(run_pipeline, job_id)
     JOB_STATUS[job_id] = "queued"
     return {"message": "Processing started", "job_id": job_id}
+
+def _artifacts_for_job(job_id: str) -> dict:
+    """Which server-rendered files exist for this job (e.g. mmdc output)."""
+    job_dir = StorageService.get_job_dir(job_id)
+    if not os.path.isdir(job_dir):
+        return {"server_png": False, "server_svg": False}
+    return {
+        "server_png": os.path.isfile(os.path.join(job_dir, "diagram.png")),
+        "server_svg": os.path.isfile(os.path.join(job_dir, "diagram.svg")),
+    }
+
 
 @router.get("/status/{job_id}")
 async def get_status(job_id: str):
@@ -118,4 +145,7 @@ async def get_status(job_id: str):
     Get the status of a processing job.
     """
     status = JOB_STATUS.get(job_id, "not_found")
-    return {"status": status, "job_id": job_id}
+    payload: dict = {"status": status, "job_id": job_id}
+    if status != "not_found":
+        payload["artifacts"] = _artifacts_for_job(job_id)
+    return payload

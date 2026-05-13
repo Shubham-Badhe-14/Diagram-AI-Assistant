@@ -1,10 +1,44 @@
-
+# Python
 __pycache__/
-*.pyc
-.env
+*.py[cod]
+*$py.class
+*.so
+.Python
 venv/
+.venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+.coverage.*
+*.egg-info/
+dist/
+build/
+
+# Node / frontend
+frontend/node_modules/
+frontend/dist/
+
+# Vite production build (cd frontend && npm run build)
+backend/static/
+
+# Secrets & local env
+.env
+.env.local
+.env.*.local
+*.pem
+
+# Runtime & uploads
 temp/
+server.log
+*.log
+
+# OS & editors
 .DS_Store
+Thumbs.db
 .idea/
 .vscode/
-server.log
+*.swp
+*~

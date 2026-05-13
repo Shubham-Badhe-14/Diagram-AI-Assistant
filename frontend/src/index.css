@@ -1,0 +1,69 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --surface: 15 18 28;
+  --surface-muted: 24 29 44;
+  --ink: 241 245 249;
+  --ink-muted: 148 163 184;
+  --accent: 99 102 241;
+  --accent-hover: 129 140 248;
+  --border: 51 65 85;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  @apply bg-surface text-ink antialiased min-h-screen;
+}
+
+#root {
+  @apply min-h-screen;
+}
+
+@keyframes ambient-drift-a {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(6%, 5%) scale(1.06);
+  }
+}
+
+@keyframes ambient-drift-b {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-5%, -6%) scale(1.05);
+  }
+}
+
+.ambient-orb-a {
+  animation: ambient-drift-a 22s ease-in-out infinite;
+}
+
+.ambient-orb-b {
+  animation: ambient-drift-b 28s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient-orb-a,
+  .ambient-orb-b {
+    animation: none !important;
+  }
+}
+

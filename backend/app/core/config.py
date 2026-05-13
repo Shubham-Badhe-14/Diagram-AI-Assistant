@@ -1,7 +1,7 @@
 
 import os
 from typing import List, Union
-from pydantic import AnyHttpUrl, field_validator
+from pydantic import AnyHttpUrl, AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
@@ -29,10 +29,14 @@ class Settings(BaseSettings):
     VISION_PROVIDER: str = "stub" # stub, openai, gemini
     OPENAI_API_KEY: str = ""
     GEMINI_API_KEY: str = ""
+    GEMINI_MODEL_NAME: str = "gemini-2.5-flash"
 
     # Feature Toggles
     ENABLE_PREPROCESSING: bool = True
-    ENABLE_OCR_FALLBACK: bool = False
+    ENABLE_OCR: bool = Field(
+        default=True,
+        validation_alias=AliasChoices("ENABLE_OCR", "ENABLE_OCR_FALLBACK"),
+    )
 
     # Server
     PORT: int = 8000

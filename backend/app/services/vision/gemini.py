@@ -14,11 +14,12 @@ from PIL import Image
 class GeminiVisionProvider(VisionProvider):
     def __init__(self):
         if not settings.GEMINI_API_KEY:
-            logger.warning("GEMINI_API_KEY not set. GeminiVisionProvider might fail.")
-            return
-        
+            raise VisionFailure(
+                "GEMINI_API_KEY is required when VISION_PROVIDER=gemini. "
+                "Use VISION_PROVIDER=stub for local testing without a key."
+            )
         self.client = genai.Client(api_key=settings.GEMINI_API_KEY)
-        self.model_name = "gemini-2.5-flash"
+        self.model_name = settings.GEMINI_MODEL_NAME
 
     def _convert_to_pil(self, image: np.ndarray) -> Image.Image:
         """Converts BGR numpy image to RGB PIL Image."""

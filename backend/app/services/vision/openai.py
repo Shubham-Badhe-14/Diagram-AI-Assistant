@@ -21,7 +21,9 @@ class OpenAIVisionProvider(VisionProvider):
         _, buffer = cv2.imencode('.jpg', image)
         return base64.b64encode(buffer).decode('utf-8')
 
-    async def analyze(self, image: np.ndarray, prompt: str) -> Dict[str, Any]:
+    async def analyze(
+        self, image: np.ndarray, prompt: str, status_callback=None
+    ) -> Dict[str, Any]:
         logger.info("Sending image to OpenAI Vision API...")
         base64_image = self._encode_image(image)
 

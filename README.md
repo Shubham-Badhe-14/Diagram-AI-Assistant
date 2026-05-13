@@ -1,66 +1,237 @@
-# Sketch2Flow: Hand-Drawn to Digital Flowcharts
+# Sketch2Flow
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/release/python-3100/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.109.0+-009688.svg?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+Turn **hand-drawn flowcharts** (pen and paper, whiteboards, notebook scans) into **editable [Mermaid](https://mermaid.js.org/)** diagrams. A **FastAPI** pipeline runs preprocessing, optional OCR, and a configurable **vision LLM**; a **React + TypeScript** UI previews the chart, lets you tune appearance and export PNG/JPEG, and calls a **Reimagine** endpoint to refine structure against your latest editor text.
 
-**Sketch2Flow** is an intelligent tool that transforms hand-drawn diagrams into digital flowcharts and executable code. Powered by advanced Computer Vision (OpenCV) and Generative AI (Gemini/OpenAI), it bridges the gap between whiteboard brainstorming and digital implementation.
+---
 
-## 🚀 Features
+## Why this project
 
-- **Upload & Analyze**: Simply upload an image of your hand-drawn flowchart.
-- **AI-Powered Recognition**: Utilizes Google Gemini or OpenAI GPT-4 Vision to interpret shapes, text, and connections.
-- **Code Generation**: Automatically generates Python, JavaScript, or Mermaid.js code from your diagram.
-- **Interactive UI**: View your original image side-by-side with the generated digital version.
-- **Preprocessing Pipeline**: Advanced image processing with OpenCV to enhance contrast and readability before AI analysis.
+- **End-to-end product**: upload → async job → live Mermaid editor → client raster export and optional server PNG via `mmdc`.
+- **Clear separation**: vision produces structured JSON; a small **inference** layer builds a graph; **Mermaid generation** is deterministic from that graph.
+- **Modern UI**: TanStack Query, Tailwind, Framer Motion, scoped flowchart theming (not global app chrome), optional title block composited into exports.
 
-## 🛠️ Tech Stack
+Good fit for a portfolio or resume when you want to show **multimodal AI**, **Python services**, and **React** in one repo.
 
-- **Backend**: Python 3.12+, FastAPI
-- **Computer Vision**: OpenCV, EasyOCR
-- **AI Models**: Google Gemini Pro Vision / OpenAI GPT-4o
-- **Frontend**: HTML5, JavaScript (Simple & Lightweight)
+---
 
-## 📦 Installation
+## Screenshots
 
-1.  **Clone the repository**
-    ```bash
-    git clone https://github.com/Shubham-Badhe-14/Diagram-AI-Assistant.git
-    cd Diagram-AI-Assistant
-    ```
+Here are some screenshots of the application in action:
 
-2.  **Create a virtual environment**
-    ```bash
-    python -m venv venv
-    source venv/bin/activate  # On Windows: venv\Scripts\activate
-    ```
+### 1. Hero Section
+![Hero Section](docs/images/screenshot1.png)
 
-3.  **Install dependencies**
-    ```bash
-    pip install -r backend/requirements.txt
-    ```
+### 2. Diagram Processing
+![Diagram Processing](docs/images/screenshot2.png)
 
-4.  **Configure Environment**
-    Create a `.env` file in the root directory and add your API keys:
-    ```bash
-    cp .env.example .env
-    # Edit .env and set GEMINI_API_KEY or OPENAI_API_KEY
-    ```
+### 3. Mermaid Source Editor
+![Mermaid Source Editor](docs/images/screenshot3.png)
 
-## 🚦 Usage
+---
 
-1.  **Start the Backend Server**
-    ```bash
-    uvicorn backend.main:app --reload
-    ```
+## Architecture
 
-2.  **Open the Application**
-    Navigate to `http://localhost:8000` in your web browser.
+```mermaid
+flowchart LR
+  subgraph client [Browser]
+    UI[React UI]
+  end
+  subgraph api [FastAPI]
+    UP[Upload]
+    PR[Process pipeline]
+    RS[Results / Mermaid]
+    RI[Reimagine]
+  end
+  subgraph pipeline [Pipeline]
+    PP[Preprocess]
+    OCR[Optional OCR]
+    VN[Vision model]
+    INF[Graph inference]
+    MM[Mermaid generator]
+    PNG[Optional mmdc PNG]
+  end
+  UI -->|POST file| UP
+  UI -->|POST process| PR
+  PR --> PP --> OCR --> VN --> INF --> MM
+  MM --> PNG
+  UI -->|GET mermaid| RS
+  UI -->|POST reimagine + body| RI
+  RI --> VN
+```
 
-3.  **Upload & Convert**
-    - Click "Upload Image" to select your handwritten diagram.
-    - Wait for the AI to process and generate the flowchart code.
+---
 
-## 🤝 Contributing
+## Tech stack
 
-Contributions are welcome! Please open an issue or submit a pull request for any improvements or bug fixes.
+| Layer | Choices |
+|--------|---------|
+| API | FastAPI, Uvicorn, Pydantic settings |
+| Vision | Pluggable: **stub**, **Google Gemini**, **OpenAI** (image → JSON graph) |
+| OCR | Optional **EasyOCR** |
+| Diagram | Custom inference → **Mermaid** text; optional **@mermaid-js/mermaid-cli** for `diagram.png` |
+| Frontend | Vite, React 18, TypeScript, TanStack Query, Tailwind, Framer Motion, Mermaid.js |
+| Dev UX | `Makefile` + `scripts/dev-all.sh` (venv, installs, API + Vite in one terminal) |
+
+---
+
+## Features
+
+- **Upload** a sketch (drag-and-drop or file picker); **Ctrl+Enter** starts conversion from the upload screen.
+- **Pipeline**: preprocess → optional OCR → vision JSON → graph merge → **Mermaid**; optional **server-side PNG** when `mmdc` is on `PATH`.
+- **Result UI**: live Mermaid textarea with debounced preview; **flowchart-only** colours, font, size, optional **title** above the chart; **PNG / JPEG** export with optional **light canvas**; copy and **.mmd** download; **Toggle TD / LR**; **Reimagine with AI** (second vision pass).
+- **Reimagine** sends `{ "mermaid": "<your editor text>" }` so the model refines what you see, not only the last saved `diagram.mmd` on disk (empty body still falls back to the file).
+
+---
+
+## Requirements
+
+- **Python** 3.10+
+- **Node.js** 18+ (for the frontend dev server and production build)
+
+---
+
+## Quick start
+
+```bash
+git clone https://github.com/<you>/Sketch2Flow.git
+cd Sketch2Flow
+
+python3 -m venv venv
+source venv/bin/activate          # Windows: venv\Scripts\activate
+pip install -r backend/requirements.txt
+
+cp .env.example .env              # set VISION_PROVIDER and API keys as needed
+
+chmod +x scripts/dev-all.sh       # first time only
+./scripts/dev-all.sh              # or: make dev-all
+```
+
+Open **http://localhost:5173** (Vite proxies `/api` to the API on port **8000**). API docs: **http://127.0.0.1:8000/docs**.
+
+### Environment variables
+
+See [.env.example](.env.example). Highlights:
+
+| Variable | Role |
+|----------|------|
+| `VISION_PROVIDER` | `stub` (no keys), `gemini`, or `openai` |
+| `ENABLE_OCR` | `true` / `false` (alias: `ENABLE_OCR_FALLBACK`) |
+| `GEMINI_API_KEY`, `GEMINI_MODEL_NAME` | Gemini |
+| `OPENAI_API_KEY` | OpenAI |
+| `BACKEND_CORS_ORIGINS` | Comma-separated origins if the UI is not same-origin (e.g. explicit `VITE_API_BASE` without Vite proxy) |
+
+**Never commit `.env`**—it is listed in `.gitignore`.
+
+---
+
+## Production-style run (single origin)
+
+Build the SPA into `backend/static`, then serve only the API (static files are mounted from that folder):
+
+```bash
+cd frontend && npm install && npm run build
+cd .. && ./venv/bin/uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Open **http://localhost:8000**. If the UI was not built, `/` returns JSON with build instructions.
+
+### Optional: server PNG
+
+Install [Mermaid CLI](https://github.com/mermaid-js/mermaid-cli) (`mmdc`) globally or on `PATH`. Jobs can then emit `diagram.png`; without it, jobs may finish as `completed_with_warnings` while the UI still supports **client-side** PNG/JPEG export.
+
+---
+
+## Development (two terminals)
+
+**API**
+
+```bash
+./venv/bin/uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+**Frontend** (proxies `/api` to `http://127.0.0.1:8000`)
+
+```bash
+cd frontend && npm run dev
+```
+
+Use **http://localhost:5173**. Alternatively set `VITE_API_BASE` and configure CORS.
+
+---
+
+## Makefile
+
+| Target | Purpose |
+|--------|---------|
+| `make dev-all` | One terminal: venv (if needed), installs, backend + Vite |
+| `make install` | venv + `pip` + `npm install` only |
+| `make dev-backend` | Uvicorn only |
+| `make dev-frontend` | Vite only |
+| `make test` | Pytest |
+
+---
+
+## Testing
+
+```bash
+./venv/bin/pip install -r backend/requirements.txt
+./venv/bin/python -m pytest tests -q --ignore=tests/integration_test.py
+```
+
+`make test` uses the same command. The script below is a **manual** HTTP smoke test (requires a running API):
+
+```bash
+./venv/bin/python tests/integration_test.py
+```
+
+---
+
+## API overview
+
+| Method | Path | Description |
+|--------|------|----------------|
+| `POST` | `/api/v1/upload` | Multipart image → `job_id` |
+| `POST` | `/api/v1/process/{job_id}` | Start pipeline |
+| `GET` | `/api/v1/status/{job_id}` | Poll status / artifacts |
+| `GET` | `/api/v1/results/{job_id}/mermaid` | Fetch `diagram.mmd` text |
+| `GET` | `/api/v1/results/{job_id}/png` | Server PNG when present |
+| `POST` | `/api/v1/reimagine/{job_id}` | JSON body `{ "mermaid": "..." }` (optional); overwrites `diagram.mmd` |
+
+OpenAPI: `/api/v1/openapi.json` and `/docs`.
+
+---
+
+## Repository layout
+
+| Path | Contents |
+|------|----------|
+| [backend/](backend/) | FastAPI app, pipeline services, Mermaid CLI wrapper |
+| [frontend/](frontend/) | Vite React app (build output goes to `backend/static/`) |
+| [scripts/](scripts/) | `dev-all.sh` helper |
+| [tests/](tests/) | Pytest + optional integration script |
+
+---
+
+## Contributing
+
+Issues and pull requests are welcome. Please keep changes focused, match existing style, and run `make test` plus `cd frontend && npm run build` before submitting.
+
+---
+
+## CI
+
+GitHub Actions (`.github/workflows/ci.yml`) runs **pytest** on `tests/` (excluding `integration_test.py`, which needs a live API) and **`npm ci` + `npm run build`** in `frontend/` on every push and pull request.
+
+---
+
+## Checklist before your first push
+
+1. Copy `.env.example` → `.env` locally only; never commit `.env`.
+2. Run `cd frontend && npm run build` once so `backend/static/` exists for local single-origin runs (that folder is gitignored).
+3. Replace `https://github.com/<you>/Sketch2Flow.git` in [Quick start](#quick-start) with your real clone URL (optional).
+
+---
+
+## License
+
+[MIT License](LICENSE) — see the `LICENSE` file in the repository root.

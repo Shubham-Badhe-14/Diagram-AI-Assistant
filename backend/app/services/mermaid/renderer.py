@@ -13,7 +13,7 @@ class MermaidRenderer:
         # Check if mmdc is in path
         self.mmdc_path = shutil.which("mmdc")
         if not self.mmdc_path:
-            logger.warning("Mermaid CLI (mmdc) not found in PATH. Rendering will fail.")
+            logger.debug("Mermaid CLI (mmdc) not found in PATH; server-side PNG/SVG rendering will be skipped until installed.")
 
     async def render(self, mermaid_code: str, output_format: str = "png") -> str:
         """

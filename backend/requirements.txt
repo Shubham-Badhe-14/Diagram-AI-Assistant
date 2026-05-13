@@ -15,3 +15,5 @@ python-dotenv
 openai
 google-genai
 pillow
+pytest
+requests

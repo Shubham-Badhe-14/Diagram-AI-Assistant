@@ -5,7 +5,9 @@ from loguru import logger
 from backend.app.services.vision.base import VisionProvider
 
 class StubVisionProvider(VisionProvider):
-    async def analyze(self, image: np.ndarray, prompt: str) -> Dict[str, Any]:
+    async def analyze(
+        self, image: np.ndarray, prompt: str, status_callback=None
+    ) -> Dict[str, Any]:
         logger.info("StubVisionProvider: Returning mock data")
         # Mock structured output matching the schema
         return {

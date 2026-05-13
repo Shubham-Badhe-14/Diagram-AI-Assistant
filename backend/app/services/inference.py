@@ -24,6 +24,29 @@ class Diagram(BaseModel):
 
 # --- Inference Engine ---
 
+def _ocr_text_for_bbox(
+    node_bbox: Optional[List[int]], ocr_data: List[Dict[str, Any]]
+) -> Optional[str]:
+    """Concatenate OCR strings whose bounding-box center lies inside the node rectangle."""
+    if not node_bbox or len(node_bbox) < 4 or not ocr_data:
+        return None
+    x, y, w, h = int(node_bbox[0]), int(node_bbox[1]), int(node_bbox[2]), int(node_bbox[3])
+    parts: List[str] = []
+    for item in ocr_data:
+        pts = item.get("bbox") or []
+        if len(pts) < 2:
+            continue
+        cx = sum(int(p[0]) for p in pts) / len(pts)
+        cy = sum(int(p[1]) for p in pts) / len(pts)
+        if x <= cx <= x + w and y <= cy <= y + h:
+            t = str(item.get("text", "")).strip()
+            if t:
+                parts.append(t)
+    if not parts:
+        return None
+    return " ".join(parts)
+
+
 class InferenceEngine:
     def __init__(self):
         pass
@@ -52,9 +75,20 @@ class InferenceEngine:
                 new_id = f"node_{i}"
                 id_map[original_id] = new_id
                 
-                # Sanitize label (basic cleanup before Mermaid generator handles the rest)
-                label = str(n_data.get("label", "Node"))
-                
+                # Merge OCR text that falls inside the vision node's bbox
+                vision_label = str(n_data.get("label", "Node")).strip() or "Node"
+                ocr_label = _ocr_text_for_bbox(n_data.get("bbox"), ocr_data)
+                if ocr_label:
+                    vl, ol = vision_label.lower(), ocr_label.lower()
+                    if ol in vl or vl in ol:
+                        label = vision_label
+                    elif not vision_label or vision_label == "Node":
+                        label = ocr_label
+                    else:
+                        label = f"{vision_label} ({ocr_label})"
+                else:
+                    label = vision_label
+
                 nodes.append(Node(
                     id=new_id,
                     label=label,
