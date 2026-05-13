@@ -212,26 +212,6 @@ OpenAPI: `/api/v1/openapi.json` and `/docs`.
 
 ---
 
-## Contributing
-
-Issues and pull requests are welcome. Please keep changes focused, match existing style, and run `make test` plus `cd frontend && npm run build` before submitting.
-
----
-
-## CI
-
-GitHub Actions (`.github/workflows/ci.yml`) runs **pytest** on `tests/` (excluding `integration_test.py`, which needs a live API) and **`npm ci` + `npm run build`** in `frontend/` on every push and pull request.
-
----
-
-## Checklist before your first push
-
-1. Copy `.env.example` → `.env` locally only; never commit `.env`.
-2. Run `cd frontend && npm run build` once so `backend/static/` exists for local single-origin runs (that folder is gitignored).
-3. Replace `https://github.com/<you>/Sketch2Flow.git` in [Quick start](#quick-start) with your real clone URL (optional).
-
----
-
 ## License
 
 [MIT License](LICENSE) — see the `LICENSE` file in the repository root.
