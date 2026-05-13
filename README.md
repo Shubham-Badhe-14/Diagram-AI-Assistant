@@ -4,16 +4,6 @@ Turn **hand-drawn flowcharts** (pen and paper, whiteboards, notebook scans) into
 
 ---
 
-## Why this project
-
-- **End-to-end product**: upload → async job → live Mermaid editor → client raster export and optional server PNG via `mmdc`.
-- **Clear separation**: vision produces structured JSON; a small **inference** layer builds a graph; **Mermaid generation** is deterministic from that graph.
-- **Modern UI**: TanStack Query, Tailwind, Framer Motion, scoped flowchart theming (not global app chrome), optional title block composited into exports.
-
-Good fit for a portfolio or resume when you want to show **multimodal AI**, **Python services**, and **React** in one repo.
-
----
-
 ## Screenshots
 
 Here are some screenshots of the application in action:
